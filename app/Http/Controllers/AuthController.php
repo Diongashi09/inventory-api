@@ -9,35 +9,79 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Client;
 
 class AuthController extends Controller
 {
+    // public function register(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'name'                  => 'required|string|max:255',
+    //         'email'                 => 'required|string|email|unique:users',
+    //         'password'              => 'required|string|confirmed|min:6',
+    //         'role_id'               => 'required|exists:roles,id',
+    //     ]);
+
+    //     $role = Role::find($data['role_id']);
+    //     $forbiddenRoles = ['admin', 'manager'];
+
+
+    //     if (in_array(strtolower($role->name), $forbiddenRoles)) {
+    //         return response()->json([
+    //             'message' => 'You are not allowed to register as an admin or manager.'
+    //         ], 403);
+    //     }
+
+    //     $user = User::create([
+    //         'name'      => $data['name'],
+    //         'email'     => $data['email'],
+    //         'password'  => Hash::make($data['password']),
+    //         'role_id'   => $data['role_id'],
+    //     ]);
+
+    //     $token = $user->createToken('auth_token')->plainTextToken;
+
+    //     return response()->json([
+    //         'access_token' => $token,
+    //         'token_type'   => 'Bearer',
+    //         'user'         => $user->load('role'),
+    //     ], 201);
+    // }
+
+
     public function register(Request $request)
     {
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'email'                 => 'required|string|email|unique:users',
             'password'              => 'required|string|confirmed|min:6',
-            'role_id'               => 'required|exists:roles,id',
         ]);
 
-        $role = Role::find($data['role_id']);
-        $forbiddenRoles = ['admin', 'manager'];
+        // 2) Find your “client” role (must already exist in roles table)
+        $clientRole = Role::where('name','client')->firstOrFail();
 
-
-        if (in_array(strtolower($role->name), $forbiddenRoles)) {
-            return response()->json([
-                'message' => 'You are not allowed to register as an admin or manager.'
-            ], 403);
-        }
-
+        // 3) Create the User as a client
         $user = User::create([
             'name'      => $data['name'],
             'email'     => $data['email'],
             'password'  => Hash::make($data['password']),
-            'role_id'   => $data['role_id'],
+            'role_id'   => $clientRole->id,
         ]);
 
+        // 4) Create the Client record and link it
+        Client::create([
+            'user_id'         => $user->id,
+            'name'            => $user->name,
+            // you can customize these defaults or pull from the request if you extend your form
+            'client_type'     => 'individual',
+            'contact_person'  => null,
+            'phone'           => null,
+            'email'           => $user->email,
+            'address'         => null,
+            'additional_info' => null,
+        ]);
+
+        // 5) Issue token and respond
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

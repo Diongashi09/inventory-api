@@ -14,6 +14,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WarehouseTransferController;
 use App\Http\Controllers\ShippingWebhookController;
+use App\Http\Controllers\ShippingController;
+use Illuminate\Http\Request;
 
 Route::post('register', [AuthController::class,'register']);
 Route::post('login',    [AuthController::class,'login']);
@@ -36,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function(){
 
     Route::get('transactions', [TransactionController::class,'index']);
     Route::get('transactions/{transaction}', [TransactionController::class, 'show']);
+
+    Route::get('/shippings', [ShippingController::class, 'index']);
+    Route::get('/shippings/{shipping}', [ShippingController::class, 'show']);
 
     Route::post('/warehouse/transfer-all', [WarehouseTransferController::class, 'moveAllToMainWarehouse']);
     Route::post('/warehouses/refill-stock', [WarehouseTransferController::class, 'refillProductStockFromWarehouse']);

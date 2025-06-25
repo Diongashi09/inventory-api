@@ -92,49 +92,4 @@ class SupplieService
             ]);
         }
     }
-
-    // public function createSupply(array $data): Supply
-    // {
-    //     return DB::transaction(function () use ($data) {
-    //         $supply = Supply::create([
-    //             'reference_number' => $data['reference_number'],
-    //             'date'             => $data['date'],
-    //             'supplier_type'    => $data['supplier_type'],
-    //             'supplier_id'      => $data['supplier_id'] ?? null,
-    //             'tariff_fee'       => $data['tariff_fee'] ?? 0,
-    //             'import_cost'      => $data['import_cost'] ?? 0,
-    //             'status'           => $data['status'] ?? 'pending',
-    //             'created_by'       => auth()->id(),
-    //         ]);
-
-    //         foreach ($data['items'] as $i) {
-    //             $item = $supply->items()->create([
-    //                 'product_id'  => $i['product_id'],
-    //                 'quantity'    => $i['quantity'],
-    //                 'unit_price'  => $i['unit_price'],
-    //                 'total_price' => $i['quantity'] * $i['unit_price'],
-    //             ]);
-
-    //             $product = $item->product;
-    //             $product->increment('stock_quantity', $item->quantity);
-
-    //             Transaction::create([
-    //                 'transaction_type' => 'supply',
-    //                 'reference_id'     => $supply->id,
-    //                 'product_id'       => $product->id,
-    //                 'quantity'         => $item->quantity,
-    //                 'unit_price'       => $item->unit_price,
-    //                 'total_price'      => $item->total_price,
-    //                 'direction'        => 'in',
-    //                 'tariff_fee'       => $supply->tariff_fee,
-    //                 'import_cost'      => $supply->import_cost,
-    //                 'created_by'       => auth()->id(),
-    //             ]);
-
-    //             $this->invoiceService->attemptShippingPendingInvoicesForProduct($product->id);
-    //         }
-
-    //         return $supply;
-    //     });
-    // }
 }

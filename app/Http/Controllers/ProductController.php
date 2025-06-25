@@ -63,7 +63,7 @@ class ProductController extends Controller
             'stock_quantity' => 'numeric|min:0',
             'price_excl_vat' => 'numeric',
             'vat_rate'       => 'numeric',
-            'unit'           => 'required|in:pcs,kg,ltr',
+            'unit'           => 'sometimes|in:pcs,kg,ltr',
         ]);
 
         $product->update($data);
