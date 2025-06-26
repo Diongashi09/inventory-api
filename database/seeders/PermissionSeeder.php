@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
     {
         $resources = [
             'users','categories','clients',
-            'invoices','products','supplies','transactions'
+            'invoices','products','supplies','transactions','announcement'
         ];
         $verbs = ['create','read','update','delete'];
 

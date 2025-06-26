@@ -15,6 +15,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WarehouseTransferController;
 use App\Http\Controllers\ShippingWebhookController;
 use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\AnnouncementController;
 use Illuminate\Http\Request;
 
 Route::post('register', [AuthController::class,'register']);
@@ -35,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function(){
 
     Route::apiResource('supplies', SupplieController::class);
     Route::apiResource('invoices', InvoiceController::class);
+
+    Route::apiResource('announcements',AnnouncementController::class);
 
     Route::get('transactions', [TransactionController::class,'index']);
     Route::get('transactions/{transaction}', [TransactionController::class, 'show']);

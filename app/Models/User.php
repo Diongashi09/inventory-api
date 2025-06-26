@@ -42,6 +42,32 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+
+    public function isAdmin(): bool
+    {
+        return optional($this->role)->name === 'Admin';
+    }
+
+    /**
+     * Helper method to check if the user has the 'Manager' role.
+     *
+     * @return bool
+     */
+    public function isManager(): bool
+    {
+        return optional($this->role)->name === 'Manager';
+    }
+
+    /**
+     * Helper method to check if the user has the 'Client' role.
+     *
+     * @return bool
+     */
+    public function isClient(): bool
+    {
+        return optional($this->role)->name === 'Client';
+    }
+
     // public function supplies(){
     //     return $this->hasMany(Supply::class,'created_by');
     // }

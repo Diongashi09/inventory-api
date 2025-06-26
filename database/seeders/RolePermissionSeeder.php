@@ -15,9 +15,9 @@ class RolePermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin   = Role::where('name','admin')->first();
-        $manager = Role::where('name','manager')->first();
-        $client  = Role::where('name','client')->first();
+        $admin   = Role::where('name','Admin')->first();
+        $manager = Role::where('name','Manager')->first();
+        $client  = Role::where('name','Client')->first();
 
         // 1) Admin: all perms
         $admin->permissions()->sync(
@@ -26,7 +26,7 @@ class RolePermissionSeeder extends Seeder
 
         // 2) Manager: read/create/update on most resources, but no deletes
         $managerPerms = Permission::whereIn('resource', [
-                'categories','clients','invoices','products','supplies'
+                'categories','clients','invoices','products','supplies','announcements'
             ])
             ->whereIn('verb',['read','create','update'])
             ->pluck('id')
@@ -47,6 +47,15 @@ class RolePermissionSeeder extends Seeder
                       ->pluck('id')
                       ->toArray()
         );
+        // Specific: Announcements (read/create/update) - as requested, kept separate
+        $managerPerms = array_merge(
+            $managerPerms,
+            Permission::where('resource', 'announcement')
+                      ->whereIn('verb', ['read', 'create', 'update'])
+                      ->pluck('id')
+                      ->toArray()
+        );
+
         $manager->permissions()->sync(array_unique($managerPerms));
 
         // 3) Client: only read categories & clients, and “update self” on users
@@ -64,6 +73,15 @@ class RolePermissionSeeder extends Seeder
         );
         // + users.update (self)
         $clientPerms[] = Permission::where('name','Update Self')->first()->id;
+
+        // *** ADD THIS: give clients read access to announcements ***
+        $clientPerms = array_merge(
+            $clientPerms,
+            Permission::where('resource','announcement')
+                      ->where('verb','read')
+                      ->pluck('id')
+                      ->toArray()
+        );
 
         $client->permissions()->sync(array_unique($clientPerms));   
     }
