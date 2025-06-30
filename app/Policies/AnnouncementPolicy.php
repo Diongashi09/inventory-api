@@ -26,14 +26,14 @@ class AnnouncementPolicy extends BasePolicy
     {
         // Managers should be able to view all, Clients only published (handled in controller)
         // Here, we just check if they have general 'read' permission for announcements resource
-        return $this->allowIf($user, 'read', 'announcements');
+        return $this->allowIf($user, 'read', 'announcement');
     }
 
     public function view(User $user, Announcement $announcement): Response
     {
         // Managers can view any announcement
         if ($user->isManager()) {
-            return $this->allowIf($user, 'read', 'announcements');
+            return $this->allowIf($user, 'read', 'announcement');
         }
 
         // Clients can view announcements only if they are published
@@ -41,7 +41,7 @@ class AnnouncementPolicy extends BasePolicy
             // Check if the specific announcement instance is currently published
             // This relies on the 'published' scope on the Announcement model
             if ($announcement->published()->exists()) {
-                return $this->allowIf($user, 'read', 'announcements');
+                return $this->allowIf($user, 'read', 'announcement');
             }
         }
 
@@ -50,17 +50,17 @@ class AnnouncementPolicy extends BasePolicy
 
     public function create(User $user): Response
     {
-        return $this->allowIf($user, 'create', 'announcements');
+        return $this->allowIf($user, 'create', 'announcement');
     }
 
     public function update(User $user, Announcement $announcement): Response
     {
-        return $this->allowIf($user, 'update', 'announcements');
+        return $this->allowIf($user, 'update', 'announcement');
     }
 
     public function delete(User $user, Announcement $announcement): Response
     {
-        return $this->allowIf($user, 'delete', 'announcements');
+        return $this->allowIf($user, 'delete', 'announcement');
     }
 }
 

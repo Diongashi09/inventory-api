@@ -84,5 +84,10 @@ class RolePermissionSeeder extends Seeder
         );
 
         $client->permissions()->sync(array_unique($clientPerms));   
+
+
+        //mi jep permission clientit me read products
+        $clientPerms[] = 19;
+        $client->permissions()->sync(array_unique($clientPerms));
     }
 }

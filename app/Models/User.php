@@ -4,8 +4,10 @@ namespace App\Models;
 use App\Models\Role;
 use App\Models\Supply;
 use App\Models\Invoice;
+use App\Models\Client;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
@@ -40,6 +42,11 @@ class User extends Authenticatable
 
     public function role(){
         return $this->belongsTo(Role::class);
+    }
+
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class,'user_id');
     }
 
 

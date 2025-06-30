@@ -21,6 +21,10 @@ class InvoicePolicy extends BasePolicy
 
     public function viewAny(User $user)
     {
+        if($user->isClient()){//their own invoices
+            return Response::allow();
+        }
+
         return $this->allowIf($user, 'read', 'invoices');
     }
 

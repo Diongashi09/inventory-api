@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 use App\Http\Controllers\Controller;
@@ -15,7 +16,7 @@ class ProductController extends Controller
         $this->authorizeResource(Product::class, 'product');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         // try {
         //     return Product::with('category')->get();
@@ -31,7 +32,37 @@ class ProductController extends Controller
         //     ], 500);
         // }
 
-        return Product::with('category')->get();
+
+        //////
+
+        // return Product::with('category')->get();
+
+        $query = Product::with('category');
+
+        //filtering by category
+        if($request->has('category_id')){
+            $categoryId = $request->input('category_id');
+
+            //Validate 
+            if(!Category::where('id',$categoryId)->exists()){
+                return response()->json(['message' => 'Invalid category ID provided'],400);
+            }
+            $query->where('category_id',$categoryId);
+        }
+
+        //Sorting by price
+        if($request->has('sort_by')){
+            $sortBy = $request->input('sort_by');
+            if($sortBy === 'price_asc'){
+                $query->orderBy('price_excl_vat','asc');
+            } elseif($sortBy === 'price_desc'){
+                $query->orderBy('price_excl_vat','desc');
+            }
+        } else {
+            $query->orderBy('name','asc');
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)

@@ -34,6 +34,11 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::apiResource('products',   ProductController::class);
     Route::apiResource('clients',    ClientController::class);
 
+    // Add the specific route for a client user to update their own profile
+    Route::patch('/client/profile', [ClientController::class, 'updateClientProfile']);
+    // You might also want a GET route to fetch their own profile:
+    Route::get('/client/profile', [ClientController::class, 'showClientProfile']); // Add this method to ClientController
+
     Route::apiResource('supplies', SupplieController::class);
     Route::apiResource('invoices', InvoiceController::class);
 

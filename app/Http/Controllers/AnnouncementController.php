@@ -22,11 +22,11 @@ class AnnouncementController extends Controller
         $query = Announcement::query();
 
         // if client, only published
-        if ($user->role->name === 'client') {
+        if ($user->role->name === 'Client') {
             $query->published();
         }
 
-        $announcements = $query->orderByDesc('published_at')->get();
+        $announcements = $query->with('creator')->orderByDesc('published_at')->get();
 
         return response()->json($announcements);
     }

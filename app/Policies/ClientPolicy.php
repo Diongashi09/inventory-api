@@ -37,7 +37,13 @@ class ClientPolicy extends BasePolicy
 
     public function update(User $user, Client $client)
     {
-        return $this->allowIf($user, 'update', 'clients');
+        // Let clients update their own profile
+    if ($user->id === $client->user_id && $user->isClient()) {
+        return Response::allow();
+    }
+
+    // Otherwise, use permission-based check
+    return $this->allowIf($user, 'update', 'clients');
     }
 
     public function delete(User $user, Client $client)

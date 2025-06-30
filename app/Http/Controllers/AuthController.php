@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Client;
@@ -51,44 +52,92 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $data = $request->validate([
+        $validatedUserData = $request->validate([
             'name'                  => 'required|string|max:255',
-            'email'                 => 'required|string|email|unique:users',
+            'email'                 => 'required|string|email|max:255|unique:users',
             'password'              => 'required|string|confirmed|min:6',
+            'client_type' => 'required|in:individual,company',
+            'company_name' => 'required_if:client_type,company|string|max:255',
+            'contact_person' => 'nullable|string|max:255',//Required if company, nullable if individual
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
+            'additional_info' => 'nullable|string',
         ]);
 
-        // 2) Find your “client” role (must already exist in roles table)
-        $clientRole = Role::where('name','client')->firstOrFail();
+        return DB::transaction(function () use ($validatedUserData) {
+            $clientRole = Role::where('name','client')->firstOrFail();
 
-        // 3) Create the User as a client
-        $user = User::create([
-            'name'      => $data['name'],
-            'email'     => $data['email'],
-            'password'  => Hash::make($data['password']),
-            'role_id'   => $clientRole->id,
-        ]);
+            $user = User::create([
+                'name' => $validatedUserData['name'],
+                'email' => $validatedUserData['email'],
+                'password' => Hash::make($validatedUserData['password']),
+                'role_id' => $clientRole->id,
+            ]);
 
-        // 4) Create the Client record and link it
-        Client::create([
-            'user_id'         => $user->id,
-            'name'            => $user->name,
-            // you can customize these defaults or pull from the request if you extend your form
-            'client_type'     => 'individual',
-            'contact_person'  => null,
-            'phone'           => null,
-            'email'           => $user->email,
-            'address'         => null,
-            'additional_info' => null,
-        ]);
+            $clientData = [
+                'name' => $validatedUserData['client_type'] === 'company' ? $validatedUserData['company_name']: $validatedUserData['name'],
+                'client_type' => $validatedUserData['client_type'],
+                'contact_person' => ($validatedUserData['client_type'] === 'company' ? $validatedUserData['contact_person'] : null),
+                'phone' => $validatedUserData['phone'] ?? null,
+                'email' => $validatedUserData['email'],//Sync client email with user email
+                'address' => $validatedUserData['address'] ?? null,
+                'additional_info' => $validatedUserData['additional_info'] ?? null,
+                'user_id' => $user->id,
+            ];
 
-        // 5) Issue token and respond
-        $token = $user->createToken('auth_token')->plainTextToken;
+            $client = Client::create($clientData);
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => $user->load('role'),
-        ], 201);
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Client registered successfully.',
+                'access_token' => $token,
+                'token_type'   => 'Bearer',
+                'user'         => $user->load('role'),
+                'client_profile' => $client,
+            ], 201);
+        });
+
+        /////
+
+        // $data = $request->validate([
+        //     'name'                  => 'required|string|max:255',
+        //     'email'                 => 'required|string|email|unique:users',
+        //     'password'              => 'required|string|confirmed|min:6',
+        // ]);
+
+        // // 2) Find your “client” role (must already exist in roles table)
+        // $clientRole = Role::where('name','client')->firstOrFail();
+
+        // // 3) Create the User as a client
+        // $user = User::create([
+        //     'name'      => $data['name'],
+        //     'email'     => $data['email'],
+        //     'password'  => Hash::make($data['password']),
+        //     'role_id'   => $clientRole->id,
+        // ]);
+
+        // // 4) Create the Client record and link it
+        // Client::create([
+        //     'user_id'         => $user->id,
+        //     'name'            => $user->name,
+        //     // you can customize these defaults or pull from the request if you extend your form
+        //     'client_type'     => 'individual',
+        //     'contact_person'  => null,
+        //     'phone'           => null,
+        //     'email'           => $user->email,
+        //     'address'         => null,
+        //     'additional_info' => null,
+        // ]);
+
+        // // 5) Issue token and respond
+        // $token = $user->createToken('auth_token')->plainTextToken;
+
+        // return response()->json([
+        //     'access_token' => $token,
+        //     'token_type'   => 'Bearer',
+        //     'user'         => $user->load('role'),
+        // ], 201);
     }
 
     public function login(Request $request)

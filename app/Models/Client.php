@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Supply;
 use App\Models\Invoice;
+use App\Models\User;
 
 class Client extends Model
 {
@@ -19,7 +20,13 @@ class Client extends Model
         'email',
         'address',
         'additional_info',
+        'user_id',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function supplies(){
         return $this->hasMany(Supply::class,'supplier_id');

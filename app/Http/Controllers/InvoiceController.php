@@ -22,16 +22,36 @@ class InvoiceController extends Controller
         $this->invoiceService = $invoiceService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $user = $request->user();
+
+        $query = Invoice::with(['client','creator','items.product']);
+
+        if($user->isClient()){
+            if(!$user->client){
+                return response()->json(['message' => 'Client profile not found'],404);
+            }
+
+            //Filter invoices for this specific client
+            $query->where('customer_id',$user->client->id);
+        }
+
         // return Invoice::with(['client','creator','items.product'])->get();
-        return InvoiceResource::collection(
-            Invoice::with(['client', 'creator', 'items.product'])->get()
-        );
+        return InvoiceResource::collection($query->get());
     }
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
+        if($user->isClient() && $user->client){
+            $request->merge([
+                'customer_id' => $user->client->id,
+            ]);
+        }
+
+
         $validated = $request->validate([
             'customer_id' => 'required|exists:clients,id',
             'products'    => 'required|array|min:1',
