@@ -140,6 +140,24 @@ class AuthController extends Controller
         // ], 201);
     }
 
+    // public function user(Request $request){
+    //     $user = auth()->user();
+
+    //     return response()->json([
+    //         'access_token' => $token,
+    //         'token_type'   => 'Bearer',
+    //         'user' => $user->load('role')
+    //     ]);
+    // }
+
+    public function user(Request $request)
+    {
+        return response()->json(
+            $request->user()->load('role', 'client') // Add 'client' if needed
+        );
+    }
+
+
     public function login(Request $request)
     {
         $request->validate([

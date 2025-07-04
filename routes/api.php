@@ -27,6 +27,8 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('logout', [AuthController::class,'logout']);
     Route::post('users/create-manager',[UserController::class,'createManager']);
 
+    Route::get('/user',[AuthController::class, 'user']);
+
     Route::apiResource('users',    UserController::class)->except(['store']);
     Route::apiResource('roles',    RoleController::class);
 

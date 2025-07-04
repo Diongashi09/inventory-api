@@ -82,21 +82,40 @@ class InvoiceService {
                     ->where('product_id', $product->id)
                     ->first()?->pivot->quantity ?? 0;
 
-                    $warehouse->products()->updateExistingPivot($product->id, [
-                        'quantity' => $currentQty - $quantity,
-                    ]);
+                    //new lines
+                    $pivot = $warehouse->products()
+                    ->where('product_id', $product->id)
+                    ->first();
+                    $currentQty = $pivot?->pivot->quantity ?? 0;
+
+                    //end of new lines
+
+                    //decrement the warehouse pivot
+                    // $warehouse->products()->updateExistingPivot($product->id, [
+                    //     'quantity' => $currentQty - $quantity,
+                    // ]);
+
+                    //new line-decrement the global products.stock_quantity
+                    $product->decrement('stock_quantity',$quantity);
 
                     if (($currentQty - $quantity) <= 0) {
                         $this->sendReplenishmentNotification([$product]);
                     }
                 }
 
+                $shippingCompany = $data['shipping_company'] ?? 'FedEx';
+                $shippingCost = match ($shippingCompany) {
+                    'DHL' => 12.5,
+                    'UPS' => 15,
+                    default => 10,
+                };
+
                 // Start shipping process
                 if ($isStockAvailable) {
                     $this->startShipping(
                         $invoice,
-                        $data['shipping_company'] ?? 'FedEx',
-                        $data['shipping_cost'] ?? 0
+                        $shippingCompany,
+                        $shippingCost
                     );
                 }
             

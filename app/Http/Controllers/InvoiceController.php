@@ -24,7 +24,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->loadMissing('client');
 
         $query = Invoice::with(['client','creator','items.product']);
 
@@ -45,12 +45,20 @@ class InvoiceController extends Controller
     {
         $user = $request->user();
 
-        if($user->isClient() && $user->client){
-            $request->merge([
-                'customer_id' => $user->client->id,
-            ]);
-        }
 
+        //this way validate ska me u bo edhe pse eshte bo merge pershkak qe e use origin request
+        // if($user->isClient() && $user->client){
+        //     $request->merge([
+        //         'customer_id' => $user->client->id,
+        //     ]);
+        // }
+
+        if ($user->isClient() && $user->client) {
+            // $request->replace(array_merge($request->all(), [
+            //     'customer_id' => $user->client->id,
+            // ]));
+            $request->request->set('customer_id', $user->client->id);
+        }
 
         $validated = $request->validate([
             'customer_id' => 'required|exists:clients,id',
@@ -58,7 +66,7 @@ class InvoiceController extends Controller
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
             'shipping_company' => 'sometimes|string|max:255',
-            'shipping_cost' => 'sometimes|numeric|min:0',
+            // 'shipping_cost' => 'sometimes|numeric|min:0',
         ]);
     
         $invoice = $this->invoiceService->createInvoice($validated);

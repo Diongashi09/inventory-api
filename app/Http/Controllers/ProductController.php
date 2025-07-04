@@ -59,7 +59,8 @@ class ProductController extends Controller
                 $query->orderBy('price_excl_vat','desc');
             }
         } else {
-            $query->orderBy('name','asc');
+            // $query->orderBy('name','asc');
+            $query->orderBy('id','asc');
         }
 
         return $query->get();
