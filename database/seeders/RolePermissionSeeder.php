@@ -26,11 +26,20 @@ class RolePermissionSeeder extends Seeder
 
         // 2) Manager: read/create/update on most resources, but no deletes
         $managerPerms = Permission::whereIn('resource', [
-                'categories','clients','invoices','products','supplies','announcements'
+                'categories','clients','invoices','products','supplies','announcements','vendor_companies'
             ])
             ->whereIn('verb',['read','create','update'])
             ->pluck('id')
             ->toArray();
+
+        $managerPerms = array_merge(
+            $managerPerms,
+            Permission::where('resource','vendor_companies')
+                  ->whereIn('verb',['read','delete'])
+                  ->pluck('id')
+                  ->toArray()
+            );
+
         // + on transactions only read/create
         $managerPerms = array_merge(
             $managerPerms,

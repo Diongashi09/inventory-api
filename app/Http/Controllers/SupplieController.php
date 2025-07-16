@@ -8,9 +8,12 @@ use App\Services\SupplieService;
 use App\Http\Resources\SupplieResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\VendorCompany;
 
 class SupplieController extends Controller
 {
+    protected SupplieService $service;
+
     public function __construct(SupplieService $service)
     {
         $this->middleware('auth:sanctum');
@@ -18,17 +21,31 @@ class SupplieController extends Controller
         $this->service = $service;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $supplies = Supply::with(['client','creator','items.product'])->get();
-        return SupplieResource::collection($supplies);
+        $query = Supply::with(['vendorCompany','creator','items.product']);
+
+        // Add search by reference number OR supplier name
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('reference_number', 'like', $searchTerm . '%')
+                  ->orWhereHas('vendorCompany', function ($qVendor) use ($searchTerm) {
+                      $qVendor->where('name', 'like', '%' . $searchTerm . '%');
+                  });
+            });
+        }
+
+        $query->orderBy('date','desc');
+
+        return SupplieResource::collection($query->get());
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'supplier_type'    => 'required|in:person,company',
-            'supplier_id'      => 'nullable|exists:clients,id',
+            'supplier_id'      => 'nullable|exists:vendor_companies,id',
             'tariff_fee'       => 'nullable|numeric',
             'import_cost'      => 'nullable|numeric',
             'status'           => 'in:pending,in_review,received,cancelled',
@@ -38,14 +55,19 @@ class SupplieController extends Controller
             'items.*.unit_price' => 'required|numeric',
         ]);
 
-        $supply = $this->service->createSupply($data)->load(['client', 'creator', 'items.product']);
+        $data['status'] = 'pending';
+
+        $supply = $this->service->createSupplyRequest($data)->load(['vendorCompany', 'creator', 'items.product']);
+
+        $savedProduct = \App\Models\Product::find($data['items'][0]['product_id']);
+        \Log::info('Final stock after service:', ['stock_quantity' => $savedProduct->stock_quantity]);
 
         return response()->json(new SupplieResource($supply), 201);
     }
 
     public function show(Supply $supply)
     {
-        $supply->load(['client','creator','items.product']);
+        $supply->load(['vendorCompany','creator','items.product']);
         return new SupplieResource($supply);
     }
 
@@ -53,10 +75,29 @@ class SupplieController extends Controller
     {
         $data = $request->validate([
             'status' => 'required|in:pending,in_review,received,cancelled',
+            // 'supplier_type' => 'sometimes|required|in:person,company',
+            // 'supplier_id'   => 'sometimes|nullable|exists:vendor_companies,id',
+            // 'tariff_fee'    => 'sometimes|nullable|numeric',
+            // 'import_cost'   => 'sometimes|nullable|numeric',
+            // 'items'              => 'sometimes|array|min:1', // If items can be updated here
+            // 'items.*.product_id' => 'sometimes|required|exists:products,id',
+            // 'items.*.quantity'   => 'sometimes|required|integer|min:1',
+            // 'items.*.unit_price' => 'sometimes|required|numeric',
         ]);
 
-        $supply->update($data);
-        return response()->json($supply);
+        $oldStatus = $supply->status;
+
+
+        // $supply->update($data);
+        $supply->update(['status' => $request->input('status')]);
+
+        if($oldStatus !== 'received' && $supply->status === 'received'){
+            $this->service->receiveSupply($supply);
+        }
+
+        $supply->load(['vendorCompany', 'creator', 'items.product']);
+        // return response()->json($supply);
+        return response()->json(new SupplieResource($supply));
     }
 
     public function destroy(Supply $supply)

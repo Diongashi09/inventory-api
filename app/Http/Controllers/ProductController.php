@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\Warehouse;
 
 use App\Http\Controllers\Controller;
 
@@ -38,6 +41,15 @@ class ProductController extends Controller
         // return Product::with('category')->get();
 
         $query = Product::with('category');
+
+        // Add search by product name or description
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('description', 'like', '%' . $searchTerm . '%');
+            });
+        }
 
         //filtering by category
         if($request->has('category_id')){
@@ -73,12 +85,54 @@ class ProductController extends Controller
             'description'    => 'nullable|string',
             'category_id'    => 'nullable|exists:categories,id',
             'stock_quantity' => 'numeric|min:0',
+            'low_stock_threshold' => 'required|integer|min:0',
             'price_excl_vat' => 'required|numeric',
             'vat_rate'       => 'required|numeric',
             'unit'           => 'required|in:pcs,kg,ltr',
         ]);
 
-        return response()->json(Product::create($data), 201);
+
+        return DB::transaction(function () use ($data) {
+            $product = Product::create($data);
+    
+            // --- NEW LOGIC FOR WAREHOUSE ASSOCIATION ---
+            $warehouse = Warehouse::first(); // Or a specific warehouse ID from request
+    
+            $warehouse->products()->attach($product->id, [
+                'quantity' => $data['stock_quantity'],
+            ]);
+
+            Log::info("Created product #{$product->id} - set stock_quantity={$data['stock_quantity']} and pivot entry. ");
+
+            return response()->json([
+                'message' => 'Product created successfully.',
+                'product' => $product->load('warehouses'),
+            ], 201);
+
+            // if ($mainWarehouse) {
+            //     // Attach the new product to the main warehouse with an initial quantity (e.g., 0)
+            //     // You might want to allow this initial quantity to be specified in the request
+            //     $initialWarehouseQuantity = $request->input('initial_stock_quantity', 0); // Allow initial stock
+            //     $mainWarehouse->products()->attach($product->id, ['quantity' => $initialWarehouseQuantity]);
+    
+            //     // Ensure products.stock_quantity is also updated
+            //     $product->update(['stock_quantity' => $initialWarehouseQuantity]);
+    
+            //     // Log this for clarity
+            //     Log::info("Product created: {$product->name}. Added to warehouse {$mainWarehouse->name} with initial quantity: {$initialWarehouseQuantity}.");
+    
+            // } else {
+            //     Log::warning("No main warehouse found for new product {$product->name}. Product created without warehouse stock entry.");
+            // }
+            // --- END NEW LOGIC ---
+    
+            // return response()->json([
+            //     'message' => 'Product created successfully.',
+            //     'product' => $product
+            // ], 201);
+        });
+
+        // return response()->json(Product::create($data), 201);
     }
 
     public function show(Product $product)
@@ -93,6 +147,7 @@ class ProductController extends Controller
             'description'    => 'nullable|string',
             'category_id'    => 'nullable|exists:categories,id',
             'stock_quantity' => 'numeric|min:0',
+            'low_stock_threshold' => 'required|integer|min:0',
             'price_excl_vat' => 'numeric',
             'vat_rate'       => 'numeric',
             'unit'           => 'sometimes|in:pcs,kg,ltr',

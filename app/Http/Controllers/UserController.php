@@ -15,9 +15,28 @@ class UserController extends Controller
         $this->authorizeResource(User::class, 'user');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return User::with('role')->get();
+        // return User::with('role')->get();
+        $clientRoleId = Role::where('name','Client')->value('id');
+
+        $query = User::query();
+
+        if($clientRoleId){
+            $query->where('role_id','!=',$clientRoleId);
+        }
+
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('email', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        $employees = $query->with('role')->get();
+
+        return response()->json($employees);
     }
 
     public function show(User $user)

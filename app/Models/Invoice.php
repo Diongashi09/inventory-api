@@ -44,8 +44,13 @@ class Invoice extends Model
     }
 
     public function logs()
-{
-    return $this->hasMany(InvoiceLog::class);
-}
+    {
+        return $this->hasMany(InvoiceLog::class);
+    }
 
+    // ... existing code ...
+public function order()
+{
+    return $this->belongsTo(\App\Models\Order::class);
+}
 }

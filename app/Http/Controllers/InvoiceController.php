@@ -26,7 +26,7 @@ class InvoiceController extends Controller
     {
         $user = $request->user()->loadMissing('client');
 
-        $query = Invoice::with(['client','creator','items.product']);
+        $query = Invoice::with(['client','creator','items.product','shipping']);
 
         if($user->isClient()){
             if(!$user->client){
@@ -36,6 +36,19 @@ class InvoiceController extends Controller
             //Filter invoices for this specific client
             $query->where('customer_id',$user->client->id);
         }
+
+        // Add search by reference number OR client name
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('reference_number', 'like', $searchTerm . '%')
+                  ->orWhereHas('client', function ($qClient) use ($searchTerm) {
+                      $qClient->where('name', 'like', '%' . $searchTerm . '%');
+                  });
+            });
+        }
+
+        $query->orderBy('date','desc');
 
         // return Invoice::with(['client','creator','items.product'])->get();
         return InvoiceResource::collection($query->get());
@@ -66,7 +79,7 @@ class InvoiceController extends Controller
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
             'shipping_company' => 'sometimes|string|max:255',
-            // 'shipping_cost' => 'sometimes|numeric|min:0',
+            'shipping_cost' => 'sometimes|numeric|min:0',
         ]);
     
         $invoice = $this->invoiceService->createInvoice($validated);
@@ -87,7 +100,7 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         $data = $request->validate([
-            'reference_number' => 'sometimes|required|string|unique:invoices,reference_number,' . $invoice->id,
+            // 'reference_number' => 'sometimes|required|string|unique:invoices,reference_number,' . $invoice->id,
             'date'             => 'sometimes|required|date',
             'customer_type'    => 'sometimes|required|in:person,company',
             'customer_id'      => 'nullable|exists:clients,id',
@@ -110,10 +123,17 @@ class InvoiceController extends Controller
 
     public function startShipping(Request $request, Invoice $invoice)
     {
-        $trackingId = $request->input('tracking_id');
+        // $trackingId = $request->input('tracking_id');
         
-        (new InvoiceService())->startShipping($invoice, $trackingId);
+        // (new InvoiceService())->startShipping($invoice, $trackingId);
         
+        // return response()->json(['message' => 'Shipping started.']);
+
+        $shippingCompany = $request->input('shipping_company');
+        $shippingCost = $request->input('shipping_cost'); // Capture from request if provided
+
+        $this->invoiceService->startShipping($invoice, $shippingCompany, $shippingCost);
+
         return response()->json(['message' => 'Shipping started.']);
     }
 }

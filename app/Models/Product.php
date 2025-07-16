@@ -21,6 +21,7 @@ class Product extends Model
         'price_excl_vat',
         'vat_rate',
         'unit',
+        'low_stock_threshold',
     ];
 
     public function category(){

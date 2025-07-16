@@ -17,6 +17,8 @@ use Database\Seeders\InvoiceSeeder;
 use Database\Seeders\WarehouseSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RolePermissionSeeder;
+use Database\Seeders\AddClientReadInvoicesPermission;
+use Database\Seeders\VendorCompanyPermissionsSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -37,9 +39,9 @@ class DatabaseSeeder extends Seeder
         //     InvoiceSeeder::class,   
         // ]);
 
-        // $this->call([
-        //     WarehouseSeeder::class,
-        // ]);
+        $this->call([
+            WarehouseSeeder::class,
+        ]);
         
         /////////////////
 
@@ -97,8 +99,12 @@ class DatabaseSeeder extends Seeder
         //     PermissionSeeder::class,
         // ]);
 
-        $this->call([
-            RolePermissionSeeder::class,
-        ]);
+        // $this->call([
+        //     RolePermissionSeeder::class,
+        // ]);
+
+        // $this->call(AddClientReadInvoicesPermission::class);
+
+        // $this->call([VendorCompanyPermissionsSeeder::class]);
     }
 }

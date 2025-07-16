@@ -17,9 +17,24 @@ class ClientController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return Client::all();
+        $query = Client::query();
+
+        // search
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('contact_person', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('phone', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        $query->orderBy('created_at', 'desc'); // <-- Added sorting
+
+        return $query->get();
     }
 
     public function store(Request $request)
@@ -34,14 +49,14 @@ class ClientController extends Controller
                 Rule::requiredIf($request->input('client_type') === 'company'), // contact_person required if company
             ],
             'phone'           => 'nullable|string',
-            'email'           => 'nullable|email',
+            'email'           => 'required|email',
             'address'         => 'nullable|string',
             'additional_info' => 'nullable|string',
         ]);
 
         $client = Client::create($data);
 
-        return response()->json(Client::create($data), 201);
+        return response()->json($client, 201);
     }
 
     public function show(Client $client)
@@ -58,6 +73,10 @@ class ClientController extends Controller
                 'nullable',
                 'string',
                 'max:255',
+                Rule::requiredIf(function () use ($request, $client) {
+                    return ($request->input('client_type') === 'company') ||
+                           ($request->missing('client_type') && $client->client_type === 'company');
+                }),
                 // Rule::requiredIf($request->input('client_type') === 'company'), // This validation needs careful consideration for updates
             ],
             'phone'           => 'nullable|string',

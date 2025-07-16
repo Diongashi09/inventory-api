@@ -2,7 +2,8 @@
 
 namespace App\Mail;
 
-use App\Models\Invoice;
+// use App\Models\Invoice;
+use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -14,27 +15,27 @@ class ClientShippingNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $invoice;
+    public $order;
 
-    public function __construct(Invoice $invoice)
+    public function __construct(Order $order)
     {
-        $this->invoice = $invoice;
+        $this->order = $order;
     }
 
     public function build()
-{
-    $clientName = $this->invoice->client->name;
-    $referenceNumber = $this->invoice->reference_number;
-    $shipping = $this->invoice->shipping;
+    {
+        $clientName = $this->order->client->name;
+        $referenceNumber = $this->order->reference_number;
+        $shipping = $this->order->shipping;
 
-    $shippingCompany = $shipping?->shipping_company ?? 'Unknown';
-    $trackingId = $shipping?->tracking_id ?? 'N/A';
-    $status = $shipping?->status ?? 'Pending';
+        $shippingCompany = $shipping?->shipping_company ?? 'Unknown';
+        $trackingId = $shipping?->tracking_id ?? 'N/A';
+        $status = $shipping?->status ?? 'Pending';
 
     $textBody = <<<EOT
 Hi {$clientName},
 
-Your order (Invoice: {$referenceNumber}) is now on the way!
+Your order  ({$referenceNumber}) is now on the way!
 
 Shipping Details:
 - Shipping Company: {$shippingCompany}

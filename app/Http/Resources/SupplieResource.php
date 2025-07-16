@@ -2,7 +2,8 @@
 
 namespace App\Http\Resources;
 
-use App\Http\Resources\ClientResource;
+// use App\Http\Resources\ClientResource;
+use App\Http\Resources\VendorCompanyResource;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\SupplieItemResource;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class SupplieResource extends JsonResource
             'import_cost'      => $this->import_cost,
             'status'           => $this->status,
             'created_by'       => $this->created_by,
-            'client'           => new ClientResource($this->whenLoaded('client')),
+            'supplier'           => new VendorCompanyResource($this->whenLoaded('vendorCompany')),
             'creator'          => new UserResource($this->whenLoaded('creator')),
             'items' => SupplieItemResource::collection($this->whenLoaded('items')),
             'created_at'       => $this->created_at->toIso8601String(),

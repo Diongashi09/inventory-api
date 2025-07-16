@@ -14,13 +14,15 @@ class CategoryController extends Controller
 
     public function index()
     {
-        return Category::all();
+        $categories = Category::orderBy('created_at','desc')->get();
+
+        return response()->json($categories);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string',
+            'name'        => 'required|string|unique:categories,name',
             'description' => 'nullable|string',
         ]);
 
